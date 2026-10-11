@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organizer & Admin Dashboard - CampusEvents</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<header>
+    <div class="nav-container">
+        <a th:href="@{/}" class="brand">
+            <div class="brand-icon">🎓</div>
+            <div class="brand-text">
+                <h1>CampusEvents</h1>
+                <p>Jenkins-Automated Event Registration Portal</p>
+            </div>
+        </a>
+        <nav>
+            <ul>
+                <li><a th:href="@{/}">Events</a></li>
+                <li><a th:href="@{/register}">Register</a></li>
+                <li><a th:href="@{/status}">Check Status</a></li>
+                <li><a th:href="@{/admin}" class="active">Admin Dashboard <span class="admin-badge">Staff</span></a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+        <div>
+            <h2 style="font-size:1.6rem; color:var(--dark);">Participant Approval & Moderation Console</h2>
+            <p style="font-size:0.875rem; color:var(--muted);">Verify student enrollments, manage capacity quotas, and issue participant confirmations.</p>
+        </div>
+        <div>
+            <a th:href="@{/register}" class="btn btn-primary btn-sm">+ New Registration</a>
+        </div>
+    </div>
+
+    <!-- Alert Notifications -->
+    <div th:if="${successMessage}" class="alert alert-success">
+        <span>✅</span>
+        <span th:text="${successMessage}">Status updated successfully!</span>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-error">
+        <span>⚠️</span>
+        <span th:text="${errorMessage}">Error occurred.</span>
+    </div>
+
+    <!-- Quick Stats Overview -->
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-icon" style="background:#e0e7ff; color:#4338ca;">📋</div>
+            <div class="metric-info">
+                <h3 th:text="${metrics.totalRegistrations}">0</h3>
+                <p>Total Submissions</p>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon" style="background:#fef3c7; color:#d97706;">⏳</div>
+            <div class="metric-info">
+                <h3 th:text="${metrics.pending}">0</h3>
+                <p>Pending Review</p>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon" style="background:#d1fae5; color:#059669;">✅</div>
+            <div class="metric-info">
+                <h3 th:text="${metrics.approved}">0</h3>
+                <p>Confirmed Approved</p>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon" style="background:#fee2e2; color:#dc2626;">❌</div>
+            <div class="metric-info">
+                <h3 th:text="${metrics.rejected}">0</h3>
+                <p>Declined / Full</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Control Bar -->
+    <div style="background:white; border-radius:var(--radius); border:1px solid var(--border); padding:1rem 1.25rem; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+            <span style="font-size:0.85rem; font-weight:600; color:var(--slate);">Filter By Status:</span>
+            <a th:href="@{/admin}" class="btn btn-secondary btn-sm" th:classappend="${selectedStatus == null and selectedEventId == null} ? 'btn-primary' : ''">All</a>
+            <a th:href="@{/admin(status='PENDING')}" class="btn btn-secondary btn-sm" th:classappend="${selectedStatus?.name() == 'PENDING'} ? 'btn-primary' : ''">Pending</a>
+            <a th:href="@{/admin(status='APPROVED')}" class="btn btn-secondary btn-sm" th:classappend="${selectedStatus?.name() == 'APPROVED'} ? 'btn-primary' : ''">Approved</a>
+            <a th:href="@{/admin(status='REJECTED')}" class="btn btn-secondary btn-sm" th:classappend="${selectedStatus?.name() == 'REJECTED'} ? 'btn-primary' : ''">Rejected</a>
+        </div>
+        <div>
+            <form th:action="@{/admin}" method="get" style="display:flex; gap:0.5rem; align-items:center;">
+                <select name="eventId" class="form-control" style="font-size:0.85rem; padding:0.4rem 0.75rem;" onchange="this.form.submit()">
+                    <option value="">-- All Events --</option>
+                    <option th:each="event : ${events}" 
+                            th:value="${event.id}" 
+                            th:text="${event.title}"
+                            th:selected="${selectedEventId == event.id}">
+                    </option>
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <!-- Participant Registrations Table -->
+    <div class="table-responsive">
+        <table id="adminRegistrationsTable">
+            <thead>
+                <tr>
+                    <th>Reg Code</th>
+                    <th>Student Name</th>
+                    <th>Roll No</th>
+                    <th>Department</th>
+                    <th>Event</th>
+                    <th>Submitted</th>
+                    <th>Status</th>
+                    <th>Remarks</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="reg : ${registrations}">
+                    <td>
+                        <strong style="font-family:monospace; color:var(--primary);" th:text="${reg.registrationCode}">REG-CODE</strong>
+                    </td>
+                    <td>
+                        <strong th:text="${reg.studentName}">Name</strong>
+                        <div style="font-size:0.75rem; color:var(--muted);" th:text="${reg.studentEmail}">email@college.edu</div>
+                    </td>
+                    <td th:text="${reg.studentRollNumber}">23102A0003</td>
+                    <td th:text="${reg.studentDepartment}">CSE</td>
+                    <td th:text="${reg.event.title}">Event Name</td>
+                    <td th:text="${#temporals.format(reg.registrationDate, 'yyyy-MM-dd HH:mm')}">Date</td>
+                    <td>
+                        <span th:class="'status-pill status-' + ${reg.status}" th:text="${reg.status}">STATUS</span>
+                    </td>
+                    <td style="max-width:180px; font-size:0.8rem; color:var(--muted);" th:text="${reg.adminRemarks != null ? reg.adminRemarks : '-'}">-</td>
+                    <td>
+                        <div style="display:flex; gap:0.35rem; align-items:center;">
+                            <!-- Approve Action -->
+                            <form th:if="${reg.status.name() != 'APPROVED'}" th:action="@{/admin/update-status}" method="post" style="display:inline;">
+                                <input type="hidden" name="registrationId" th:value="${reg.id}">
+                                <input type="hidden" name="status" value="APPROVED">
+                                <input type="hidden" name="remarks" value="Approved by Event Coordinator.">
+                                <button type="submit" class="btn btn-success btn-sm" title="Approve Registration">✓ Approve</button>
+                            </form>
+
+                            <!-- Reject Action -->
+                            <form th:if="${reg.status.name() != 'REJECTED'}" th:action="@{/admin/update-status}" method="post" style="display:inline;">
+                                <input type="hidden" name="registrationId" th:value="${reg.id}">
+                                <input type="hidden" name="status" value="REJECTED">
+                                <input type="hidden" name="remarks" value="Application rejected. Exceeds branch limit or capacity.">
+                                <button type="submit" class="btn btn-danger btn-sm" title="Reject Registration">✕ Reject</button>
+                            </form>
+
+                            <a th:href="@{'/confirmation?code=' + ${reg.registrationCode}}" class="btn btn-secondary btn-sm" title="View Pass">Pass</a>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(registrations)}">
+                    <td colspan="9" style="text-align:center; padding:2rem; color:var(--muted);">
+                        No participant records match the current filter criteria.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<footer>
+    <div class="container" style="margin:0 auto; padding:0;">
+        <p>College Event Registration Platform &copy; 2026. Built by <strong>SIDDHESH RAJGURE (23102A0003)</strong>.</p>
+    </div>
+</footer>
+
+<script th:src="@{/js/scripts.js}"></script>
+</body>
+</html>

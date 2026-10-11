@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Event Registration Platform</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<header>
+    <div class="nav-container">
+        <a th:href="@{/}" class="brand">
+            <div class="brand-icon">🎓</div>
+            <div class="brand-text">
+                <h1>CampusEvents</h1>
+                <p>Jenkins-Automated Event Registration Portal</p>
+            </div>
+        </a>
+        <nav>
+            <ul>
+                <li><a th:href="@{/}" class="active">Events</a></li>
+                <li><a th:href="@{/register}">Register</a></li>
+                <li><a th:href="@{/status}">Check Status</a></li>
+                <li><a th:href="@{/admin}">Admin Dashboard <span class="admin-badge">Staff</span></a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<div class="container">
+    <!-- Student Project Meta Banner -->
+    <div class="student-bar">
+        <div>
+            <strong>Student:</strong> SIDDHESH RAJGURE &nbsp;|&nbsp;
+            <strong>Roll No:</strong> 23102A0003 &nbsp;|&nbsp;
+            <strong>Architecture:</strong> Spring Boot 3 + Jenkins CI/CD + Docker + Ansible
+        </div>
+        <div>
+            <span class="status-pill status-APPROVED">● CI Pipeline Active</span>
+        </div>
+    </div>
+
+    <!-- Live Platform Metrics -->
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-icon" style="background:#e0e7ff; color:#4338ca;">🎪</div>
+            <div class="metric-info">
+                <h3 th:text="${metrics.totalEvents}">4</h3>
+                <p>Active Events</p>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon" style="background:#e0f2fe; color:#0284c7;">📝</div>
+            <div class="metric-info">
+                <h3 th:text="${metrics.totalRegistrations}">1</h3>
+                <p>Registrations Received</p>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon" style="background:#d1fae5; color:#059669;">✅</div>
+            <div class="metric-info">
+                <h3 th:text="${metrics.approved}">1</h3>
+                <p>Approved Participants</p>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon" style="background:#fef3c7; color:#d97706;">⏳</div>
+            <div class="metric-info">
+                <h3 th:text="${metrics.pending}">0</h3>
+                <p>Pending Verification</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+        <h2 class="section-title" style="margin-bottom:0;">Featured College Events</h2>
+        <div style="max-width:320px; width:100%;">
+            <input type="text" id="eventSearch" class="form-control" placeholder="Search events by title, keyword...">
+        </div>
+    </div>
+
+    <!-- Events Grid -->
+    <div class="event-grid">
+        <div th:each="event : ${events}" class="event-card">
+            <div class="event-header">
+                <span th:class="'event-badge ' + 
+                    (${event.category == 'Technical'} ? 'badge-tech' : 
+                    (${event.category == 'Workshop'} ? 'badge-workshop' : 
+                    (${event.category == 'Cultural'} ? 'badge-cultural' : 'badge-sports')))"
+                    th:text="${event.category}">Technical</span>
+                <span style="font-size:0.8rem; color:var(--muted); font-weight:600;" 
+                      th:text="'Capacity: ' + ${event.currentRegistrations} + '/' + ${event.maxCapacity}">0/100</span>
+            </div>
+            
+            <h3 class="event-title" style="padding:0 1.25rem;" th:text="${event.title}">Event Title</h3>
+            <p class="event-desc" th:text="${event.description}">Event Description</p>
+            
+            <div class="event-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span th:text="${event.eventDate}">2026-11-15</span>
+                </div>
+                <div class="meta-item">
+                    <span>📍</span>
+                    <span th:text="${event.venue}">Main Auditorium</span>
+                </div>
+                <div class="capacity-bar">
+                    <div class="capacity-fill" 
+                         th:style="'width: ' + (${event.maxCapacity > 0 ? (event.currentRegistrations * 100 / event.maxCapacity) : 0}) + '%;'"></div>
+                </div>
+            </div>
+
+            <div class="event-footer">
+                <div class="event-price" th:text="${event.fee == 0.0 ? 'Free Entry' : '₹ ' + event.fee}">Free</div>
+                <div>
+                    <a th:if="${!event.full}" th:href="@{'/register?eventId=' + ${event.id}}" class="btn btn-primary btn-sm">Register Now →</a>
+                    <span th:if="${event.full}" class="btn btn-secondary btn-sm" style="cursor:not-allowed; opacity:0.6;">Fully Booked</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fast Status Lookup Banner -->
+    <div style="background:white; border-radius:var(--radius); border:1px solid var(--border); padding:2rem; text-align:center; box-shadow:var(--shadow-sm); margin-bottom:3rem;">
+        <h3 style="font-size:1.25rem; font-weight:700; color:var(--dark); margin-bottom:0.5rem;">Already Registered? Track Your Application</h3>
+        <p style="font-size:0.9rem; color:var(--muted); margin-bottom:1.25rem;">Enter your unique Registration Code or Roll Number to inspect confirmation status in real time.</p>
+        <form th:action="@{/status}" method="get" style="display:flex; justify-content:center; gap:0.75rem; max-width:450px; margin:0 auto;">
+            <input type="text" name="query" class="form-control" placeholder="e.g. REG-2026-SR001 or 23102A0003" required>
+            <button type="submit" class="btn btn-primary">Track</button>
+        </form>
+    </div>
+</div>
+
+<footer>
+    <div class="container" style="margin:0 auto; padding:0;">
+        <p>College Event Registration Platform &copy; 2026. Built by <strong>SIDDHESH RAJGURE (23102A0003)</strong>.</p>
+        <p style="font-size:0.75rem; margin-top:0.3rem; color:var(--muted);">Automated with Jenkins CI/CD, Docker Container Lifecycle, Selenium WebDriver, and Ansible Provisioning.</p>
+    </div>
+</footer>
+
+<script th:src="@{/js/scripts.js}"></script>
+</body>
+</html>

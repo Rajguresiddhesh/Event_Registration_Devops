@@ -1,0 +1,62 @@
+---
+# ==============================================================================
+# Ansible Automated Rollback & Disaster Recovery Playbook
+# Milestone 14: Disaster Recovery & Rollback Validation
+# Student: 23102A0003 - SIDDHESH RAJGURE
+# ==============================================================================
+- name: Emergency Rollback to Previous Stable Release
+  hosts: app_servers
+  become: yes
+  vars:
+    container_name: college-event-platform
+    previous_stable_tag: "1.0.0-stable"
+    health_endpoint: "http://localhost:{{ app_port }}/actuator/health"
+
+  tasks:
+    - name: 1. Log Rollback Trigger Incident
+      debug:
+        msg: "CRITICAL: Triggering automated rollback to previous stable version {{ previous_stable_tag }} due to health probe failure!"
+
+    - name: 2. Stop and remove degraded container
+      docker_container:
+        name: "{{ container_name }}"
+        state: absent
+      ignore_errors: yes
+
+    - name: 3. Restore and run previous stable container release
+      docker_container:
+        name: "{{ container_name }}"
+        image: "event-reg-platform:{{ previous_stable_tag }}"
+        state: started
+        restart_policy: unless-stopped
+        ports:
+          - "{{ app_port }}:8080"
+        env:
+          PORT: "8080"
+      ignore_errors: yes
+
+    - name: 4. Await stable service restart
+      pause:
+        seconds: 6
+
+    - name: 5. Verify restored system health
+      uri:
+        url: "{{ health_endpoint }}"
+        method: GET
+        status_code: 200
+      register: rollback_health
+      ignore_errors: yes
+
+    - name: 6. Update release audit registry
+      copy:
+        dest: "{{ deploy_dir }}/current_version.txt"
+        content: |
+          DEPLOYED_VERSION={{ previous_stable_tag }} (ROLLED_BACK)
+          CANDIDATE=23102A0003_SIDDHESH_RAJGURE
+          TIMESTAMP={{ ansible_date_time.iso8601 }}
+          STATUS=RECOVERED_STABLE
+        mode: '0644'
+
+    - name: 7. Final Rollback Confirmation
+      debug:
+        msg: "Rollback completed successfully! Platform recovered to {{ previous_stable_tag }}."

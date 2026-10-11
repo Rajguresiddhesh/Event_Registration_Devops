@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Registration - CampusEvents</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<header>
+    <div class="nav-container">
+        <a th:href="@{/}" class="brand">
+            <div class="brand-icon">🎓</div>
+            <div class="brand-text">
+                <h1>CampusEvents</h1>
+                <p>Jenkins-Automated Event Registration Portal</p>
+            </div>
+        </a>
+        <nav>
+            <ul>
+                <li><a th:href="@{/}">Events</a></li>
+                <li><a th:href="@{/register}" class="active">Register</a></li>
+                <li><a th:href="@{/status}">Check Status</a></li>
+                <li><a th:href="@{/admin}">Admin Dashboard <span class="admin-badge">Staff</span></a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<div class="container">
+    <div style="margin-bottom:1.5rem;">
+        <a th:href="@{/}" style="color:var(--primary); text-decoration:none; font-weight:600; font-size:0.9rem;">← Back to Events</a>
+    </div>
+
+    <div class="form-card">
+        <div style="text-align:center; margin-bottom:1.75rem;">
+            <h2 style="font-size:1.6rem; color:var(--dark); margin-bottom:0.4rem;">Student Event Registration</h2>
+            <p style="font-size:0.875rem; color:var(--muted);">Fill in your verified student details to secure your event participation seat.</p>
+        </div>
+
+        <!-- Global Error Notification -->
+        <div th:if="${errorMessage}" class="alert alert-error">
+            <span>⚠️</span>
+            <span th:text="${errorMessage}">Error Message</span>
+        </div>
+
+        <form th:action="@{/register}" th:object="${registrationDto}" method="post" id="registrationForm">
+            <!-- Event Selection -->
+            <div class="form-group">
+                <label for="eventId" class="form-label">Select Event *</label>
+                <select id="eventId" th:field="*{eventId}" class="form-control" required>
+                    <option value="">-- Choose an Event --</option>
+                    <option th:each="event : ${events}" 
+                            th:value="${event.id}" 
+                            th:disabled="${event.full}"
+                            th:text="${event.title} + ' (' + ${event.category} + ') - ' + (${event.full} ? 'FULL' : ${event.currentRegistrations} + '/' + ${event.maxCapacity} + ' booked')">
+                    </option>
+                </select>
+                <span th:if="${#fields.hasErrors('eventId')}" th:errors="*{eventId}" class="field-error"></span>
+            </div>
+
+            <!-- Student Full Name -->
+            <div class="form-group">
+                <label for="studentName" class="form-label">Full Name *</label>
+                <input type="text" id="studentName" th:field="*{studentName}" class="form-control" placeholder="e.g. Siddhesh Rajgure" required>
+                <span th:if="${#fields.hasErrors('studentName')}" th:errors="*{studentName}" class="field-error"></span>
+            </div>
+
+            <!-- Roll Number -->
+            <div class="form-group">
+                <label for="studentRollNumber" class="form-label">Student Roll Number / PRN *</label>
+                <input type="text" id="studentRollNumber" th:field="*{studentRollNumber}" class="form-control" placeholder="e.g. 23102A0003" required>
+                <small class="form-text">Must be 5 to 20 alphanumeric characters.</small>
+                <span th:if="${#fields.hasErrors('studentRollNumber')}" th:errors="*{studentRollNumber}" class="field-error"></span>
+            </div>
+
+            <!-- Email Address -->
+            <div class="form-group">
+                <label for="studentEmail" class="form-label">Institutional / Student Email *</label>
+                <input type="email" id="studentEmail" th:field="*{studentEmail}" class="form-control" placeholder="e.g. siddhesh.rajgure@college.edu" required>
+                <span th:if="${#fields.hasErrors('studentEmail')}" th:errors="*{studentEmail}" class="field-error"></span>
+            </div>
+
+            <!-- Department -->
+            <div class="form-group">
+                <label for="studentDepartment" class="form-label">Department / Branch *</label>
+                <select id="studentDepartment" th:field="*{studentDepartment}" class="form-control" required>
+                    <option value="">-- Select Department --</option>
+                    <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+                    <option value="Information Technology">Information Technology</option>
+                    <option value="AI & Data Science">AI & Data Science</option>
+                    <option value="Electronics & Telecommunication">Electronics & Telecommunication</option>
+                    <option value="Mechanical Engineering">Mechanical Engineering</option>
+                    <option value="Civil Engineering">Civil Engineering</option>
+                    <option value="Electrical Engineering">Electrical Engineering</option>
+                </select>
+                <span th:if="${#fields.hasErrors('studentDepartment')}" th:errors="*{studentDepartment}" class="field-error"></span>
+            </div>
+
+            <!-- Phone Number -->
+            <div class="form-group">
+                <label for="studentPhone" class="form-label">Contact Phone Number *</label>
+                <input type="tel" id="studentPhone" th:field="*{studentPhone}" class="form-control" placeholder="e.g. +91 9876543210" required>
+                <span th:if="${#fields.hasErrors('studentPhone')}" th:errors="*{studentPhone}" class="field-error"></span>
+            </div>
+
+            <!-- Terms Confirmation -->
+            <div class="form-group" style="display:flex; align-items:flex-start; gap:0.6rem; margin-top:1.5rem;">
+                <input type="checkbox" id="terms" required style="margin-top:0.25rem;">
+                <label for="terms" style="font-size:0.85rem; color:var(--slate);">
+                    I hereby confirm that the student information entered above is genuine and accurate, and I agree to adhere to the code of conduct of the college event.
+                </label>
+            </div>
+
+            <button type="submit" id="submitRegBtn" class="btn btn-primary btn-full" style="margin-top:1.5rem; padding:0.85rem;">
+                Complete Registration & Generate Pass ➔
+            </button>
+        </form>
+    </div>
+</div>
+
+<footer>
+    <div class="container" style="margin:0 auto; padding:0;">
+        <p>College Event Registration Platform &copy; 2026. Built by <strong>SIDDHESH RAJGURE (23102A0003)</strong>.</p>
+    </div>
+</footer>
+
+<script th:src="@{/js/scripts.js}"></script>
+</body>
+</html>
