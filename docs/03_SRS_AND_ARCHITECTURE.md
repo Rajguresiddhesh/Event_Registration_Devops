@@ -133,8 +133,8 @@ erDiagram
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/siddheshrajgure/college-event-registration-platform.git
-cd college-event-registration-platform
+git clone https://github.com/Rajguresiddhesh/Event_Registration_Devops.git
+cd Event_Registration_Devops
 
 # 2. Compile and run test suite
 ./mvnw clean test

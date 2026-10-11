@@ -31,7 +31,7 @@
 
 ## 2. CI Freestyle Build Job (Milestone 7)
 - **Job Name:** `College-Event-Registration-Freestyle-CI`
-- **Source Code Management:** Git (`https://github.com/siddheshrajgure/college-event-registration-platform.git`, Branch `*/main`)
+- **Source Code Management:** Git (`https://github.com/Rajguresiddhesh/Event_Registration_Devops.git`, Branch `*/main`)
 - **Build Trigger:** Poll SCM `H/5 * * * *` (polls repository every 5 minutes for new commits) or GitHub Webhook on push.
 - **Build Steps:**
   - Invoke top-level Maven targets: `clean package`

@@ -6,7 +6,7 @@
 ---
 
 ## 1. Repository Structure & Configuration
-- **Repository Baseline:** `https://github.com/siddheshrajgure/college-event-registration-platform`
+- **Repository Baseline:** `https://github.com/Rajguresiddhesh/Event_Registration_Devops`
 - **Protected Baseline Branch:** `main`
 - **Active Development Branch:** `develop`
 - **Issue Templates:** Configured in `.github/ISSUE_TEMPLATE/` for Bug Reports and Feature Requests.

@@ -4,7 +4,7 @@
 **Candidate Name:** SIDDHESH RAJGURE  
 **Student Roll Number:** 23102A0003  
 **Domain:** DevOps Engineering, Continuous Integration & Infrastructure Automation  
-**Repository Baseline:** `https://github.com/siddheshrajgure/college-event-registration-platform`
+**Repository Baseline:** `https://github.com/Rajguresiddhesh/Event_Registration_Devops`
 
 ---
 
