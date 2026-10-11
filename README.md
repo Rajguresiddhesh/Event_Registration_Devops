@@ -188,3 +188,4 @@ Before presenting your project to the examiner, review [docs/10_VIVA_VOCE_PREPAR
 
 <!-- Feature: Registration Form v1.0 Completed -->
 Feature Branch B: Enhanced QR-code scanner and badge generator.
+Feature Branch A: Enhanced real-time participant badge generator.
