@@ -7,9 +7,10 @@
 
 pipeline {
     agent any
+
     tools {
-    maven 'Maven-3.9.6'
-}
+        maven 'Maven-3.9.6'
+    }
 
     parameters {
         choice(
@@ -59,6 +60,7 @@ pipeline {
                         sh 'mvn -version || true'
                     } else {
                         bat 'java -version || ver'
+                        bat 'mvn -version || ver'
                     }
                 }
             }
@@ -69,10 +71,9 @@ pipeline {
                 echo "Compiling application source files..."
                 script {
                     if (isUnix()) {
-                        sh 'chmod +x ./mvnw || true'
-                        sh './mvnw clean compile -DskipTests || mvn clean compile -DskipTests'
+                        sh 'mvn clean compile -DskipTests'
                     } else {
-                        bat 'call mvnw.cmd clean compile -DskipTests'
+                        bat 'mvn clean compile -DskipTests'
                     }
                 }
             }
@@ -83,9 +84,9 @@ pipeline {
                 echo "Executing JUnit 5 Unit Tests and Service Layer Validations..."
                 script {
                     if (isUnix()) {
-                        sh './mvnw test -Dtest=EventRegistrationServiceTest,RegistrationControllerTest,CollegeEventRegistrationApplicationTests || mvn test -Dtest=EventRegistrationServiceTest,RegistrationControllerTest,CollegeEventRegistrationApplicationTests'
+                        sh 'mvn test -Dtest=EventRegistrationServiceTest,RegistrationControllerTest,CollegeEventRegistrationApplicationTests'
                     } else {
-                        bat 'call mvnw.cmd test -Dtest=EventRegistrationServiceTest,RegistrationControllerTest,CollegeEventRegistrationApplicationTests'
+                        bat 'mvn test -Dtest=EventRegistrationServiceTest,RegistrationControllerTest,CollegeEventRegistrationApplicationTests'
                     }
                 }
             }
@@ -97,12 +98,11 @@ pipeline {
             }
             steps {
                 echo "Executing Selenium WebDriver End-to-End User Journey Tests..."
-                // Quality Gate: If tests fail, Surefire returns non-zero exit code and aborts the pipeline
                 script {
                     if (isUnix()) {
-                        sh './mvnw test -Dtest=*Selenium* -DfailIfNoTests=false || mvn test -Dtest=*Selenium* -DfailIfNoTests=false'
+                        sh 'mvn test -Dtest=*JourneyTest -Dselenium.required=true'
                     } else {
-                        bat 'call mvnw.cmd test -Dtest=*Selenium* -DfailIfNoTests=false'
+                        bat 'mvn test -Dtest=*JourneyTest -Dselenium.required=true'
                     }
                 }
             }
@@ -113,9 +113,9 @@ pipeline {
                 echo "Packaging deployable executable JAR..."
                 script {
                     if (isUnix()) {
-                        sh './mvnw package -DskipTests || mvn package -DskipTests'
+                        sh 'mvn package -DskipTests'
                     } else {
-                        bat 'call mvnw.cmd package -DskipTests'
+                        bat 'mvn package -DskipTests'
                     }
                 }
             }
@@ -133,8 +133,7 @@ pipeline {
             steps {
                 echo "Deploying application artifact to ${params.ENVIRONMENT} server..."
                 script {
-                    echo "Deploying target/college-event-registration-platform.jar to Tomcat / Systemd service..."
-                    echo "Server listening on http://localhost:${params.APP_PORT}/"
+                    echo "Deployment is not configured in this CI demo; skipping deployment."
                 }
             }
         }
@@ -143,16 +142,7 @@ pipeline {
             steps {
                 echo "Validating live application health via Actuator endpoint..."
                 script {
-                    if (isUnix()) {
-                        sh """
-                            sleep 5
-                            curl -s -f http://localhost:${params.APP_PORT}/actuator/health || echo "Health check probe acknowledged in CI"
-                        """
-                    } else {
-                        bat """
-                            echo Health check probe acknowledged on Windows CI agent
-                        """
-                    }
+                    echo "Health probe is skipped because no deployment target is configured."
                 }
             }
         }

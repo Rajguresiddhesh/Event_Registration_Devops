@@ -41,6 +41,10 @@ public abstract class BaseSeleniumTest {
             chromeOptions.addArguments("--disable-dev-shm-usage");
             chromeOptions.addArguments("--remote-allow-origins=*");
             chromeOptions.addArguments("--window-size=1920,1080");
+            Path chromiumBinary = Paths.get("/usr/bin/chromium");
+            if (Files.isExecutable(chromiumBinary)) {
+                chromeOptions.setBinary(chromiumBinary.toString());
+            }
 
             driver = new ChromeDriver(chromeOptions);
             driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
@@ -56,6 +60,13 @@ public abstract class BaseSeleniumTest {
                 driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
                 driverInitialized = true;
             } catch (Throwable edgeEx) {
+                if (Boolean.getBoolean("selenium.required")) {
+                    IllegalStateException failure = new IllegalStateException(
+                            "A Chrome or Edge browser is required, but neither headless WebDriver could start.",
+                            edgeEx);
+                    failure.addSuppressed(chromeEx);
+                    throw failure;
+                }
                 System.out.println("[SELENIUM NOTICE] No physical Chrome/Edge binary available in current headless environment: " + edgeEx.getMessage());
                 driverInitialized = false;
             }

@@ -19,6 +19,14 @@ flowchart TD
     Base --> SS[Failure Listener: target/selenium-screenshots/*.png]
 ```
 
+    In Jenkins, run the browser journey classes with:
+
+    ```bash
+    mvn test -Dtest=*JourneyTest -Dselenium.required=true
+    ```
+
+    The CI flag makes missing or non-starting browsers fail the build instead of silently passing. The Jenkins agent must have Chromium and ChromeDriver (or Edge and EdgeDriver) installed.
+
 ---
 
 ## 2. Critical User Journeys Specification
@@ -58,7 +66,7 @@ To fulfill the curriculum requirement of demonstrating how a defect stops deploy
 ### Scenario: Deliberately Introduced Defect
 1. **Defect Injected:** A broken regex or broken assertion (e.g. asserting uppercase `SIDDHESH RAJGURE` when service saves `Siddhesh Rajgure`).
 2. **Jenkins Pipeline Behavior:**
-   - Surefire reports:
+   - The Selenium quality-gate stage runs `*JourneyTest` classes and publishes their Surefire XML reports:
      ```
      [ERROR] Failures: 
      [ERROR]   EventRegistrationServiceTest.testRegisterStudentSuccess:60 expected: <SIDDHESH RAJGURE> but was: <Siddhesh Rajgure>
