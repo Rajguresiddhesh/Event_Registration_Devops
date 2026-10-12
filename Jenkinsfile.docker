@@ -7,6 +7,10 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'Maven-3.9.6'
+    }
+
     parameters {
         string(
             name: 'IMAGE_TAG',
@@ -15,20 +19,14 @@ pipeline {
         )
         string(
             name: 'CONTAINER_PORT',
-            defaultValue: '8080',
+            defaultValue: '8084',
             description: 'Host Port for Application Container'
-        )
-        string(
-            name: 'REGISTRY_REPO',
-            defaultValue: 'siddheshrajgure/college-event-platform',
-            description: 'Target Docker Hub / Registry Repository'
         )
     }
 
     environment {
-        CONTAINER_NAME = 'college-event-platform'
-        FULL_IMAGE = "${params.REGISTRY_REPO}:${params.IMAGE_TAG}-${env.BUILD_NUMBER}"
-        LATEST_IMAGE = "${params.REGISTRY_REPO}:latest"
+        CONTAINER_NAME = 'college-event-platform-cd'
+        FULL_IMAGE = "event-reg-platform:${params.IMAGE_TAG}-${env.BUILD_NUMBER}"
     }
 
     stages {
@@ -42,36 +40,32 @@ pipeline {
         stage('2. Automated Test Gate') {
             steps {
                 echo "Enforcing Quality Gate before container build..."
-                sh 'mvn test'
+                sh 'mvn clean test -Dselenium.required=true'
             }
         }
 
         stage('3. Build Versioned Docker Image') {
             steps {
+                script {
+                    if (!(params.CONTAINER_PORT ==~ /[0-9]{1,5}/) ||
+                        params.CONTAINER_PORT.toInteger() < 1 ||
+                        params.CONTAINER_PORT.toInteger() > 65535) {
+                        error('CONTAINER_PORT must be an integer from 1 to 65535.')
+                    }
+                    if (!(params.IMAGE_TAG ==~ /[0-9]+\.[0-9]+\.[0-9]+/)) {
+                        error('IMAGE_TAG must use semantic version format, for example 1.0.0.')
+                    }
+                }
                 echo "Building Docker image: ${FULL_IMAGE}"
-                sh "docker build -t ${FULL_IMAGE} -t ${LATEST_IMAGE} ."
+                sh "docker build -t ${FULL_IMAGE} ."
             }
         }
 
-        stage('4. Docker Registry Publication') {
+        stage('4. Automated Container Deployment') {
             steps {
-                echo "Simulating push to Docker Registry / Docker Hub: ${FULL_IMAGE}..."
-                // With credentials:
-                // withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                //     sh "echo $PASS | docker login -u $USER --password-stdin"
-                //     sh "docker push ${FULL_IMAGE}"
-                //     sh "docker push ${LATEST_IMAGE}"
-                // }
-                echo "Image tagged and ready in local registry cache: ${FULL_IMAGE}"
-            }
-        }
-
-        stage('5. Automated Container Deployment') {
-            steps {
-                echo "Deploying fresh container instance with zero-downtime replacement..."
+                echo "Replacing the demo container using the local Docker engine..."
                 sh """
-                    docker stop ${CONTAINER_NAME} || true
-                    docker rm ${CONTAINER_NAME} || true
+                    docker rm -f ${CONTAINER_NAME} >/dev/null 2>&1 || true
                     docker run -d \\
                         --name ${CONTAINER_NAME} \\
                         --restart unless-stopped \\
@@ -86,9 +80,10 @@ pipeline {
             steps {
                 echo "Performing automated post-deployment health check probe..."
                 sh """
-                    sleep 10
                     docker ps -f "name=${CONTAINER_NAME}"
-                    curl -s -f http://localhost:${params.CONTAINER_PORT}/actuator/health || exit 1
+                    curl --fail --show-error --silent \\
+                        --retry 12 --retry-connrefused --retry-delay 5 \\
+                        http://host.docker.internal:${params.CONTAINER_PORT}/actuator/health
                 """
             }
         }
@@ -99,7 +94,7 @@ pipeline {
             cleanWs deleteDirs: false, notFailBuild: true
         }
         success {
-            echo "SUCCESS: Docker Container successfully deployed at http://localhost:${params.CONTAINER_PORT}/!"
+            echo "SUCCESS: Local Docker deployment is healthy at http://localhost:${params.CONTAINER_PORT}/! No registry push was configured."
         }
         failure {
             echo "FAILURE: Docker deployment failed. Inspect docker logs ${CONTAINER_NAME}."
