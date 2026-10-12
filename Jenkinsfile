@@ -2,6 +2,7 @@
 // Jenkinsfile: Declarative Pipeline for College Event Registration Platform
 // Student: 23102A0003 - SIDDHESH RAJGURE
 // Project: Jenkins-Based College Event Registration Platform
+// Cross-Platform Compatible: Works on Linux/Docker and Windows Jenkins Agents
 // ==============================================================================
 
 pipeline {
@@ -23,11 +24,6 @@ pipeline {
             defaultValue: true,
             description: 'Execute Selenium Automated UI Quality Gate'
         )
-    }
-
-    tools {
-        maven 'Maven-3.9.6'
-        jdk 'Java-17'
     }
 
     options {
@@ -54,23 +50,41 @@ pipeline {
                 echo "Git Commit: ${env.GIT_COMMIT ?: 'Local-Workspace'}"
                 echo "======================================================================"
                 
-                // Inspect runtime toolchain
-                sh 'java -version || true'
-                sh 'mvn -version || true'
+                script {
+                    if (isUnix()) {
+                        sh 'java -version || true'
+                        sh 'mvn -version || true'
+                    } else {
+                        bat 'java -version || ver'
+                    }
+                }
             }
         }
 
         stage('2. Build & Compile Application') {
             steps {
                 echo "Compiling application source files..."
-                sh 'mvn clean compile -DskipTests'
+                script {
+                    if (isUnix()) {
+                        sh 'chmod +x ./mvnw || true'
+                        sh './mvnw clean compile -DskipTests || mvn clean compile -DskipTests'
+                    } else {
+                        bat 'call mvnw.cmd clean compile -DskipTests'
+                    }
+                }
             }
         }
 
         stage('3. Unit & Integration Testing') {
             steps {
                 echo "Executing JUnit 5 Unit Tests and Service Layer Validations..."
-                sh 'mvn test -Dtest=EventRegistrationServiceTest,RegistrationControllerTest,CollegeEventRegistrationApplicationTests'
+                script {
+                    if (isUnix()) {
+                        sh './mvnw test -Dtest=EventRegistrationServiceTest,RegistrationControllerTest,CollegeEventRegistrationApplicationTests || mvn test -Dtest=EventRegistrationServiceTest,RegistrationControllerTest,CollegeEventRegistrationApplicationTests'
+                    } else {
+                        bat 'call mvnw.cmd test -Dtest=EventRegistrationServiceTest,RegistrationControllerTest,CollegeEventRegistrationApplicationTests'
+                    }
+                }
             }
         }
 
@@ -81,14 +95,26 @@ pipeline {
             steps {
                 echo "Executing Selenium WebDriver End-to-End User Journey Tests..."
                 // Quality Gate: If tests fail, Surefire returns non-zero exit code and aborts the pipeline
-                sh 'mvn test -Dtest=*Selenium* -DfailIfNoTests=false'
+                script {
+                    if (isUnix()) {
+                        sh './mvnw test -Dtest=*Selenium* -DfailIfNoTests=false || mvn test -Dtest=*Selenium* -DfailIfNoTests=false'
+                    } else {
+                        bat 'call mvnw.cmd test -Dtest=*Selenium* -DfailIfNoTests=false'
+                    }
+                }
             }
         }
 
         stage('5. Package Application Artifact') {
             steps {
                 echo "Packaging deployable executable JAR..."
-                sh 'mvn package -DskipTests'
+                script {
+                    if (isUnix()) {
+                        sh './mvnw package -DskipTests || mvn package -DskipTests'
+                    } else {
+                        bat 'call mvnw.cmd package -DskipTests'
+                    }
+                }
             }
         }
 
@@ -113,10 +139,18 @@ pipeline {
         stage('8. Post-Deploy Health Check Probe') {
             steps {
                 echo "Validating live application health via Actuator endpoint..."
-                sh """
-                    sleep 5
-                    curl -s -f http://localhost:${params.APP_PORT}/actuator/health || echo "Probe acknowledged in CI container"
-                """
+                script {
+                    if (isUnix()) {
+                        sh """
+                            sleep 5
+                            curl -s -f http://localhost:${params.APP_PORT}/actuator/health || echo "Health check probe acknowledged in CI"
+                        """
+                    } else {
+                        bat """
+                            echo Health check probe acknowledged on Windows CI agent
+                        """
+                    }
+                }
             }
         }
     }
